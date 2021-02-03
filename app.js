@@ -6,11 +6,13 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
 const e = require("express");
-const encrypt = require("mongoose-encryption");
+const md5 = require("md5");
+// const encrypt = require("mongoose-encryption"); removed to do md5 encryption
 
 const app = express();
 
 console.log(process.env.API_KEY); // gets access to contents of .env file printed on terminal
+console.log(md5("123")); //hash applied to string 123
 
 app.use(express.static("public")); //adding public folder as static resource
 app.set('view engine' , 'ejs');    //setting view engine as ejs
@@ -29,7 +31,9 @@ const userSchema = new mongoose.Schema({
     password:String
 });
  //key used by us to encrypt our passwords
-userSchema.plugin(encrypt, { secret: process.env.SECRET ,encryptedFields: ['password']});
+// userSchema.plugin(encrypt, { secret: process.env.SECRET ,encryptedFields: ['password']});
+//removed for md5 encryption
+
 //inorder to encrypt multiple things like password add other fileds int o the array 
 //by using commas ,
 //encrypt plugin added .It is added before code of line 30
@@ -53,7 +57,7 @@ app.post("/register",function(req,res){
     //then they are rendered to secrets page
     const newUser = new User({
         email:req.body.username,
-        password:req.body.password
+        password:md5(req.body.password)   //hash applied to the password
         // these values taken from register.ejs file
     });
     newUser.save(function(err){
@@ -64,8 +68,9 @@ app.post("/register",function(req,res){
 });
 
 app.post("/login",function(req,res){
-    const username = req.body.username;
-    const password = req.body.password;
+    const username = req.body.username;      
+    const password = md5(req.body.password);      //apply hash function to password
+
     //the above two details has been entered by the user in login page
     User.findOne({email:username},function(err,foundUser){
         //mongoose decrypts when you do find function
